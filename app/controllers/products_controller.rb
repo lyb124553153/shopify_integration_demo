@@ -1,28 +1,26 @@
 # frozen_string_literal: true
 
 class ProductsController < AuthenticatedController
-  before_action :build_params, only: [:index]
   def index
-    @products = ShopifyAPI::Product.all(filter_params)
+    @products = ShopifyAPI::Product.all(build_params)
     render(json: { products: @products })
   end
 
   private
 
   def build_params
-    return unless params[:published_at].present?
+    filter_params = { limit: 20 }
+    filter_params[:limit] = params[:limit] if params[:limit].present?
+    return filter_params unless published_at.present?
 
-    published_date = params[:published_at].to_date
-
-    filter_params[:published_at_min] = published_date.beginning_of_day
-    filter_params[:published_at_max] = published_date.end_of_day
+    filter_params[:published_at_min] = published_at.beginning_of_day
+    filter_params[:published_at_max] = published_at.end_of_day
+    filter_params
   end
 
-  def filter_params
-    {
-      limit: 20
-    }
+  def published_at
+    params[:published_at].to_date
+  rescue StandardError
+    nil
   end
-
-  def published_date; end
 end
